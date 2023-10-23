@@ -1,113 +1,151 @@
-import Image from 'next/image'
+'use client'
+
+import { MenuFoldOutlined, MenuUnfoldOutlined, ShoppingCartOutlined, UserOutlined } from '@ant-design/icons';
+import { Button, Col, Form, Input, Layout, Menu, Modal, Popconfirm, Row, Space, Table, message } from 'antd';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useProdukStore } from './store/produkStore';
+import CustomModal from './component/customModal';
+const { Header, Sider, Content } = Layout;
 
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    const [collapsed, setCollapsed] = useState(false);
+    const [form] = Form.useForm();
+    
+    const [modalOpen, setModalOpen] = useState(false);
+    const [searchText, setSearchText] = useState("");
+
+    const [modalData, setModalData] = useState(null);
+
+    const [itemIdToDelete, setItemIdToDelete] = useState(0);
+
+    const allproduk = useProdukStore((state:any) => state.produkData);
+
+    const createAPICall = useProdukStore((state: any) => state.createProdukAPI);
+    
+    const callGetAPI = useProdukStore((state:any) => state.getApi);
+    
+    const callDeleteAPI = useProdukStore((state:any) => state.deleteProdukAPI);
+
+    const updateAPICall = useProdukStore((state:any) => state.updateProdukAPI);
+
+    useEffect(() => {
+        if (allproduk.length == 0) {
+            callGetAPI();
+        };
+    }, []);
+
+    const handleModalClose = async (response: { id: any; nama: any; deskripsi: any; }) => {
+        setModalOpen(false);
+        
+        if (response) {      
+            if (response.id) {
+                form.validateFields(await updateAPICall(
+                    {nama: response.nama, deskripsi: response.deskripsi, id: response.id},
+                    message.success('Data Berhasil Diedit!')
+                ));
+            
+            } else {
+                form.validateFields(await createAPICall(
+                    {nama: response.nama, deskripsi: response.deskripsi}, 
+                    message.success('Data Berhasil Ditambah!')
+                ));
+            }
+        }
+        modalData && setModalData(null);
+    }
+
+    const onCancelX = () => {
+        setModalOpen(false);
+    };
+
+    const cancel = (e: any) => {
+        console.log(e);
+        message.error('Data Batal Untuk Di Hapus!');
+    };
+
+    const DeleteHandler = (id:any) => {
+        setItemIdToDelete(id);
+    };
+
+    const onConfirm = async () => {
+        await callDeleteAPI(itemIdToDelete);
+        setItemIdToDelete(0);
+        message.success('Data Berhasil Di Hapus!');
+    };
+
+    const editItem = (record:any) => {
+        setModalData(record);
+        setModalOpen(true);
+    };
+
+    return (
+        <Layout className="h-screen">
+            <Sider trigger={null} collapsible collapsed={collapsed}>
+            <div className="height-8 m-4 bg-rgbawhite" />
+            <div className='px-4 text-center items-center self-center'><p className='text-2xl text-white'>Logo</p></div>
+            <Menu className='pt-6' theme="dark" mode="inline" defaultSelectedKeys={['1']} items={
+                [{
+                key: '1',
+                icon: <ShoppingCartOutlined />,
+                label: 'Produk',
+                }
+                ]}
             />
-          </a>
-        </div>
-      </div>
+            </Sider>
+        
+            <Layout>
+            <Header className="bg-white p-0">
+                {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+                className: 'px-6 py-0 text-lg leading-10 cursor-pointer hover:#1890ff',
+                onClick: () => setCollapsed(!collapsed),
+                })}
+            </Header>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+            <Content className="mx-6 my-4 p-6 text-center">
+                <div className='mb-4'>
+                    <Row gutter={{ md: 24}} justify="center">                            
+                        <Col span={21}>
+                            <Input.Search type="text" placeholder='Search Here...' onSearch={(value:any) => {setSearchText(value)}} onChange={(e) => {setSearchText(e.target.value)}} />
+                        </Col>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+                        <Col>
+                            <Button type="primary" className='bg-black' onClick={() => setModalOpen(true)}>Tambah Data</Button>
+                            <Modal title = "Tambah Data Produk" maskClosable = {false} open = {modalOpen} onCancel={onCancelX} footer={null}>
+                                <CustomModal onCloseModal={handleModalClose} initialData={modalData}></CustomModal>
+                            </Modal>
+                        </Col>
+                    </Row>
+                </div>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+                <div>
+                    <Table dataSource={allproduk} rowKey="id" sortDirections={["descend", "ascend"]} pagination = {{ pageSize: 5, showTotal: (total, range) => `${range[0]} - ${range[1]} Data dari Total ${total} Data`, }} >
+                        <Table.Column dataIndex='id' title="No" defaultSortOrder='ascend' sorter={(a:any, b:any) => a.id - b.id} />
+                        <Table.Column dataIndex="nama" title="Nama Produk" filteredValue={[searchText]}  onFilter={(value:any, record:any) => {return String(record.nama).toLowerCase().includes(value)}}/>
+                        <Table.Column dataIndex="deskripsi" title="Deskripsi" ellipsis={true} />
+                        <Table.Column title= "Aksi" dataIndex= "aksi"
+                        render={(_, record: any) => {
+                            return (
+                            <Space>
+                                <Button onClick={() => editItem(record)} className='border border-indigo-600'>Edit</Button>
+                                <Popconfirm
+                                            title="Hapus Data"
+                                            description="Apakah Anda Yakin Ingin Menghapus Data ini?"
+                                            okButtonProps={{className:'bg-red-500'}}
+                                            onConfirm={onConfirm}
+                                            onCancel={cancel}
+                                            okText="Hapus"
+                                            cancelText="Tidak">
+                                    <Button danger onClick={() => {DeleteHandler(record.id)}}>Delete</Button>
+                                </Popconfirm>
+                            </Space>
+                            );
+                        }}
+                        />
+                    </Table>
+                </div>
+                </Content>
+            </Layout>
+      </Layout>
+    )
 }
